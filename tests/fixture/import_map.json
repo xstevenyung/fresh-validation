@@ -5,6 +5,7 @@
     "preact": "https://esm.sh/preact@10.8.1",
     "preact/": "https://esm.sh/preact@10.8.1/",
     "preact-render-to-string": "https://esm.sh/preact-render-to-string@5.2.0?external=preact",
-    "fresh-validation": "../../mod.ts"
+    "fresh-validation": "../../mod.ts",
+    "fresh-session": "https://deno.land/x/fresh_session@0.1.7/mod.ts"
   }
 }

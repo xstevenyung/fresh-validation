@@ -1,24 +1,22 @@
 /** @jsx h */
 /** @jsxFrag Fragment */
 import { Fragment, h } from "preact";
-import { error, validateFormData, z } from "fresh-validation";
+import { error, validateFormData, z, ZodIssue } from "fresh-validation";
 import testShape from "@/shapes/test.ts";
 import { Handlers } from "$fresh/server.ts";
+import type { WithSession } from "fresh-session";
 
-globalThis.errors = null;
-
-export const handler: Handlers = {
+export const handler: Handlers<{ errors: ZodIssue[] }, WithSession> = {
   GET: (req, ctx) => {
-    const errors = globalThis.errors;
-    globalThis.errors = null;
+    const errors = ctx.state.session.flash("errors");
     return ctx.render({ errors });
   },
 
-  async POST(req) {
+  async POST(req, ctx) {
     const { validatedData, errors } = await validateFormData(req, testShape);
 
     if (errors) {
-      globalThis.errors = errors;
+      ctx.state.session.flash("errors", errors);
       return new Response(null, {
         status: 303,
         headers: { Location: req.headers.get("Referer") || "/form-data" },
