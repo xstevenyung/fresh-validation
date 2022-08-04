@@ -5,6 +5,7 @@ import {
   ZodBoolean,
   ZodDate,
   ZodError,
+  ZodIssue,
   ZodNumber,
   ZodRawShape,
   ZodString,
@@ -21,6 +22,7 @@ export function sourceToJSON(source: FormData | URLSearchParams) {
   return data;
 }
 
+// This function is meant to enhance a simple Zod shape with some preprocessing for dealing with constraint of FormData / SearchParams
 export function wrapStringyShape(shape: ZodRawShape) {
   Object.entries(shape).forEach(([key, value]) => {
     if (value instanceof ZodString) {
@@ -116,3 +118,10 @@ export async function validateJSON(req: Request, shape: ZodRawShape) {
       throw e;
     });
 }
+
+export function error(errors: ZodIssue[], key: string) {
+  if (!errors) return null;
+  return errors.find((error) => error.path.includes(key));
+}
+
+export * from "./deps.ts";
