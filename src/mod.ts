@@ -77,10 +77,32 @@ export function wrapStringyShape(shape: ZodRawShape) {
   return shape;
 }
 
-export function validateSearchParams(req: Request, shape: ZodRawShape) {
-  const { searchParams } = new URL(req.url);
+export function wrapJSONShape(shape: ZodRawShape) {
+  Object.entries(shape).forEach(([key, value]) => {
+    if (value instanceof ZodDate) {
+      shape[key] = z.preprocess(
+        (value) => {
+          if (typeof value !== "string") return undefined;
+          return !isNaN(Date.parse(value)) ? new Date(value) : value;
+        },
+        value,
+      );
+    }
+  });
+
+  return shape;
+}
+
+export function validateSearchParams(
+  source: Request | URLSearchParams,
+  shape: ZodRawShape,
+) {
+  if (source instanceof Request) {
+    source = new URL(source.url).searchParams;
+  }
+
   return z.object(wrapStringyShape(shape))
-    .parseAsync(sourceToJSON(searchParams))
+    .parseAsync(sourceToJSON(source))
     .then((validatedData) => ({ validatedData, errors: null }))
     .catch((e) => {
       if (e instanceof ZodError) {
@@ -91,10 +113,16 @@ export function validateSearchParams(req: Request, shape: ZodRawShape) {
     });
 }
 
-export async function validateFormData(req: Request, shape: ZodRawShape) {
-  const formData = await req.formData();
+export async function validateFormData(
+  source: Request | FormData,
+  shape: ZodRawShape,
+) {
+  if (source instanceof Request) {
+    source = await source.formData();
+  }
+
   return z.object(wrapStringyShape(shape))
-    .parseAsync(sourceToJSON(formData))
+    .parseAsync(sourceToJSON(source))
     .then((validatedData) => ({ validatedData, errors: null }))
     .catch((e) => {
       if (e instanceof ZodError) {
@@ -105,10 +133,16 @@ export async function validateFormData(req: Request, shape: ZodRawShape) {
     });
 }
 
-export async function validateJSON(req: Request, shape: ZodRawShape) {
-  const data = await req.json();
-  return z.object(shape)
-    .parseAsync(data)
+export async function validateJSON(
+  source: Request | object,
+  shape: ZodRawShape,
+) {
+  if (source instanceof Request) {
+    source = await source.json();
+  }
+
+  return z.object(wrapJSONShape(shape))
+    .parseAsync(source)
     .then((validatedData) => ({ validatedData, errors: null }))
     .catch((e) => {
       if (e instanceof ZodError) {
