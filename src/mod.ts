@@ -1,50 +1,118 @@
-/** @ts-ignore */
-export function useForm(schema) {
-  const register = (name: string) => {
-    if (!Object.keys(schema.shape).includes(name)) {
-      console.warn(`${name} doesn't match any key in the schema`);
-      return {};
-    }
-    /** @ts-ignore */
-    const definition = schema.shape[name];
+import {
+  z,
+  ZodArray,
+  ZodBigInt,
+  ZodBoolean,
+  ZodDate,
+  ZodError,
+  ZodNumber,
+  ZodRawShape,
+  ZodString,
+} from "./deps.ts";
 
-    let type = "text";
-    if (name === "password") {
-      type = "password";
-    } else if (
-      definition._def.typeName === "ZodString" && definition.isEmail
-    ) {
-      type = "email";
+export function sourceToJSON(source: FormData | URLSearchParams) {
+  let data: Record<string, any> = {};
+
+  source.forEach((_, key) => {
+    const values = source.getAll(key);
+    data[key] = values.length === 1 ? values[0] : values;
+  });
+
+  return data;
+}
+
+export function wrapStringyShape(shape: ZodRawShape) {
+  Object.entries(shape).forEach(([key, value]) => {
+    if (value instanceof ZodString) {
+      shape[key] = z.preprocess(
+        (value) => {
+          if (value === "") value = undefined;
+          return value;
+        },
+        value,
+      );
     }
 
-    /** @ts-ignore */
-    const validation = (definition._def.checks || []).reduce((acc, check) => {
-      if (check.kind === "min") {
-        return {
-          ...acc,
-          [definition._def.typeName === "ZodString" ? "minlength" : "min"]:
-            check.value,
-        };
+    if (value instanceof ZodNumber || value instanceof ZodBigInt) {
+      shape[key] = z.preprocess(
+        (value) => {
+          if (value === "") value = undefined;
+          return !Number.isNaN(Number(value)) ? Number(value) : value;
+        },
+        value,
+      );
+    }
+
+    if (value instanceof ZodDate) {
+      shape[key] = z.preprocess(
+        (value) => {
+          if (typeof value !== "string") return undefined;
+          return !isNaN(Date.parse(value)) ? new Date(value) : value;
+        },
+        value,
+      );
+    }
+
+    if (value instanceof ZodBoolean) {
+      shape[key] = z.preprocess(
+        (value) => {
+          return value === "on" ? true : false;
+        },
+        value,
+      );
+    }
+
+    if (value instanceof ZodArray) {
+      shape[key] = z.preprocess(
+        (value) => {
+          return Array.isArray(value) ? value.filter(Boolean) : [];
+        },
+        value,
+      );
+    }
+  });
+
+  return shape;
+}
+
+export function validateSearchParams(req: Request, shape: ZodRawShape) {
+  const { searchParams } = new URL(req.url);
+  return z.object(wrapStringyShape(shape))
+    .parseAsync(sourceToJSON(searchParams))
+    .then((validatedData) => ({ validatedData, errors: null }))
+    .catch((e) => {
+      if (e instanceof ZodError) {
+        return { validatedData: null, errors: e.issues };
       }
 
-      if (check.kind === "max") {
-        return {
-          ...acc,
-          [definition._def.typeName === "ZodString" ? "maxlength" : "max"]:
-            check.value,
-        };
+      throw e;
+    });
+}
+
+export async function validateFormData(req: Request, shape: ZodRawShape) {
+  const formData = await req.formData();
+  return z.object(wrapStringyShape(shape))
+    .parseAsync(sourceToJSON(formData))
+    .then((validatedData) => ({ validatedData, errors: null }))
+    .catch((e) => {
+      if (e instanceof ZodError) {
+        return { validatedData: null, errors: e.issues };
       }
 
-      return acc;
-    }, {});
+      throw e;
+    });
+}
 
-    return {
-      name,
-      required: !definition.isOptional() && !definition.isNullable(),
-      type,
-      ...validation,
-    };
-  };
+export async function validateJSON(req: Request, shape: ZodRawShape) {
+  const data = await req.json();
+  return z.object(shape)
+    .parseAsync(data)
+    .then((validatedData) => ({ validatedData, errors: null }))
+    .catch((e) => {
+      if (e instanceof ZodError) {
+        return { validatedData: null, errors: e.issues };
+      }
 
-  return { register };
+      throw e;
+    });
 }
