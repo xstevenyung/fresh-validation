@@ -5,6 +5,12 @@ server-side or client-side!
 
 <br>
 
+## Validation
+
+Fresh Validation is built on top of [Zod](https://zod.dev/). For more
+information on different validation rules you can check
+[Zod's documentation](https://zod.dev/).
+
 ## Getting Started
 
 You can use Fresh Validation directly without any setup:
@@ -259,8 +265,3 @@ export default function ({ data }) {
   );
 }
 ```
-
-## Validation
-
-Fresh Validation is built on top of [Zod](https://zod.dev/). For more
-information on different validation rules you can check there documentation.
