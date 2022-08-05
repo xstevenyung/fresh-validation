@@ -153,7 +153,7 @@ export async function validateJSON(
     });
 }
 
-export function error(errors: ZodIssue[], key: string) {
+export function error(errors: ZodIssue[] | undefined | null, key: string) {
   if (!errors) return null;
   return errors.find((error) => error.path.includes(key));
 }
