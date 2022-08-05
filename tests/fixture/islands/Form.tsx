@@ -1,11 +1,14 @@
 /** @jsx h */
 /** @jsxFrag Fragment */
 import { Fragment, h } from "preact";
-import { error, z } from "fresh-validation";
+import { useState } from "preact/hooks";
+import { error, z, ZodIssue } from "fresh-validation";
 import { validateFormData } from "../../../src/mod.ts";
 import testShape from "@/shapes/test.ts";
 
 export default function ({ data }) {
+  const [errors, setErrors] = useState<ZodIssue[]>([]);
+
   return (
     <form
       method="post"
@@ -15,55 +18,60 @@ export default function ({ data }) {
 
         const { validatedData, errors } = await validateFormData(
           new FormData(e.target),
-          testShape,
+          {
+            username: z.any().nullable(),
+            password: z.any().nullable(),
+            count: z.any().nullable(),
+            date: z.any().nullable(),
+            agree: z.any().nullable(),
+            runtime: z.any().nullable(),
+          },
         );
 
         if (errors) {
-          return console.error({ errors });
+          return setErrors(errors);
         }
 
-        await fetch("/json", {
+        fetch("/json", {
           method: "POST",
           body: JSON.stringify(validatedData),
           headers: { "Content-Type": "application/json" },
+        }).then(async (response) => {
+          if (response.status === 422) {
+            const { errors } = await response.json();
+            return setErrors(errors);
+          }
+          //
         });
       }}
     >
       <label for="username">Username</label>
       <input id="username" name="username" />
-      {!!error(data.errors, "username") && (
-        <p>{error(data.errors, "username")?.message}</p>
+      {!!error(errors, "username") && (
+        <p>{error(errors, "username")?.message}</p>
       )}
 
       <label for="password">Password</label>
       <input id="password" name="password" />
-      {!!error(data.errors, "password") && (
-        <p>{error(data.errors, "password")?.message}</p>
+      {!!error(errors, "password") && (
+        <p>{error(errors, "password")?.message}</p>
       )}
 
       <label for="count">Count</label>
       <input id="count" name="count" />
-      {!!error(data.errors, "count") && (
-        <p>{error(data.errors, "count")?.message}</p>
-      )}
+      {!!error(errors, "count") && <p>{error(errors, "count")?.message}</p>}
 
       <label for="date">Date</label>
       <input id="date" type="datetime-local" name="date" />
-      {!!error(data.errors, "date") && (
-        <p>{error(data.errors, "date")?.message}</p>
-      )}
+      {!!error(errors, "date") && <p>{error(errors, "date")?.message}</p>}
 
       <label for="agree">Agree to TOS</label>
       <input id="agree" type="checkbox" name="agree" />
-      {!!error(data.errors, "agree") && (
-        <p>{error(data.errors, "agree")?.message}</p>
-      )}
+      {!!error(errors, "agree") && <p>{error(errors, "agree")?.message}</p>}
 
       <h3 for="runtime">Choose the best runtime</h3>
 
-      {!!error(data.errors, "runtime") && (
-        <p>{error(data.errors, "runtime")?.message}</p>
-      )}
+      {!!error(errors, "runtime") && <p>{error(errors, "runtime")?.message}</p>}
 
       <div>
         <input id="node" type="radio" name="runtime" value="node" />
