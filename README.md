@@ -32,7 +32,7 @@ import {
   validateFormData,
   z,
   ZodIssue,
-} from "https://deno.land/x/fresh_validation@0.1.0/mod.ts";
+} from "https://deno.land/x/fresh_validation@0.1.1/mod.ts";
 import { Handlers } from "$fresh/server.ts";
 import type { WithSession } from "https://deno.land/x/fresh_session@0.1.7/mod.ts";
 
@@ -110,7 +110,7 @@ import {
   validate,
   z,
   ZodIssue,
-} from "https://deno.land/x/fresh_validation@0.1.0/mod.ts";
+} from "https://deno.land/x/fresh_validation@0.1.1/mod.ts";
 import testShape from "@/shapes/test.ts";
 import { Handlers } from "$fresh/server.ts";
 import type { WithSession } from "https://deno.land/x/fresh_session@0.1.7/mod.ts";
@@ -161,7 +161,7 @@ import { h } from "preact";
 import {
   validateJSON,
   z,
-} from "https://deno.land/x/fresh_validation@0.1.0/mod.ts";
+} from "https://deno.land/x/fresh_validation@0.1.1/mod.ts";
 import { Handlers } from "$fresh/server.ts";
 import Form from "../islands/LoginForm.tsx";
 
@@ -210,7 +210,7 @@ import {
   validateFormData,
   z,
   ZodIssue,
-} from "https://deno.land/x/fresh_validation@0.1.0/mod.ts";
+} from "https://deno.land/x/fresh_validation@0.1.1/mod.ts";
 
 export default function ({ data }) {
   const [errors, setErrors] = useState<ZodIssue[]>([]);
